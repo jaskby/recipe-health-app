@@ -1,132 +1,178 @@
 const express = require('express');
 const router = express.Router();
-const { getDb } = require('../database/db');
+const { supabase } = require('../database/supabase');
 
-router.get('/list', (req, res) => {
+router.get('/list', async (req, res) => {
   const { category, meal_type, limit = 20, offset = 0 } = req.query;
   
-  const db = getDb();
-  let recipes = [...db.data.recipes];
-  
-  if (category) {
-    recipes = recipes.filter(r => r.category === category);
-  }
-  
-  if (meal_type) {
-    recipes = recipes.filter(r => r.meal_type === meal_type);
-  }
-  
-  recipes = recipes.slice(parseInt(offset), parseInt(offset) + parseInt(limit));
-  
-  const result = recipes.map(recipe => {
-    const ingredients = db.data.recipeIngredients
-      .filter(ri => ri.recipe_id === recipe.id)
-      .map(ri => {
-        const ing = db.data.ingredients.find(i => i.id === ri.ingredient_id);
-        return {
-          name: ing?.name,
-          category: ing?.category,
-          amount: ri.amount,
-          unit: ri.unit
-        };
-      });
+  try {
+    let query = supabase
+      .from('recipes')
+      .select(`
+        *,
+        recipe_ingredients(
+          amount, unit,
+          ingredients(name, category)
+        )
+      `)
+      .range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1);
     
-    return { ...recipe, ingredients };
-  });
-  
-  res.json(result);
-});
-
-router.get('/detail/:id', (req, res) => {
-  const { id } = req.params;
-  const db = getDb();
-  
-  const recipe = db.data.recipes.find(r => r.id === parseInt(id));
-  if (!recipe) {
-    return res.status(404).json({ error: '食谱不存在' });
-  }
-  
-  const ingredients = db.data.recipeIngredients
-    .filter(ri => ri.recipe_id === recipe.id)
-    .map(ri => {
-      const ing = db.data.ingredients.find(i => i.id === ri.ingredient_id);
-      return {
-        name: ing?.name,
-        category: ing?.category,
+    if (category) {
+      query = query.eq('category', category);
+    }
+    
+    if (meal_type) {
+      query = query.eq('meal_type', meal_type);
+    }
+    
+    const { data, error } = await query;
+    
+    if (error) throw error;
+    
+    const result = data.map(recipe => ({
+      ...recipe,
+      ingredients: recipe.recipe_ingredients?.map(ri => ({
+        name: ri.ingredients?.name,
+        category: ri.ingredients?.category,
         amount: ri.amount,
         unit: ri.unit
-      };
-    });
-  
-  res.json({ ...recipe, ingredients, estimated_cost: '15.00' });
-});
-
-router.post('/daily-menu', (req, res) => {
-  const { calories_target } = req.body;
-  const db = getDb();
-  
-  const enrichRecipe = (recipe) => {
-    if (!recipe) return null;
-    const ingredients = db.data.recipeIngredients
-      .filter(ri => ri.recipe_id === recipe.id)
-      .map(ri => {
-        const ing = db.data.ingredients.find(i => i.id === ri.ingredient_id);
-        return { name: ing?.name, amount: ri.amount, unit: ri.unit };
-      });
-    return { ...recipe, ingredients };
-  };
-  
-  const breakfastRecipes = db.data.recipes.filter(r => r.meal_type === 'breakfast');
-  const lunchRecipes = db.data.recipes.filter(r => r.meal_type === 'lunch');
-  const dinnerRecipes = db.data.recipes.filter(r => r.meal_type === 'dinner');
-  
-  const breakfast = enrichRecipe(breakfastRecipes[Math.floor(Math.random() * breakfastRecipes.length)]);
-  const lunch = enrichRecipe(lunchRecipes[Math.floor(Math.random() * lunchRecipes.length)]);
-  const dinner = enrichRecipe(dinnerRecipes[Math.floor(Math.random() * dinnerRecipes.length)]);
-  
-  res.json({
-    breakfast,
-    lunch,
-    dinner,
-    total_calories: (breakfast?.calories || 0) + (lunch?.calories || 0) + (dinner?.calories || 0)
-  });
-});
-
-router.post('/random', (req, res) => {
-  const { type = 'single' } = req.query;
-  const db = getDb();
-  
-  const enrichRecipe = (recipe) => {
-    if (!recipe) return null;
-    const ingredients = db.data.recipeIngredients
-      .filter(ri => ri.recipe_id === recipe.id)
-      .map(ri => {
-        const ing = db.data.ingredients.find(i => i.id === ri.ingredient_id);
-        return { name: ing?.name, amount: ri.amount, unit: ri.unit };
-      });
-    return { ...recipe, ingredients };
-  };
-  
-  if (type === 'single') {
-    const recipe = db.data.recipes[Math.floor(Math.random() * db.data.recipes.length)];
-    res.json({ recipe: enrichRecipe(recipe) });
-  } else {
-    const breakfastRecipes = db.data.recipes.filter(r => r.meal_type === 'breakfast');
-    const lunchRecipes = db.data.recipes.filter(r => r.meal_type === 'lunch');
-    const dinnerRecipes = db.data.recipes.filter(r => r.meal_type === 'dinner');
+      })),
+      recipe_ingredients: undefined
+    }));
     
-    res.json({
-      breakfast: enrichRecipe(breakfastRecipes[Math.floor(Math.random() * breakfastRecipes.length)]),
-      lunch: enrichRecipe(lunchRecipes[Math.floor(Math.random() * lunchRecipes.length)]),
-      dinner: enrichRecipe(dinnerRecipes[Math.floor(Math.random() * dinnerRecipes.length)])
-    });
+    res.json(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: '获取食谱列表失败' });
   }
 });
 
-router.get('/categories', (req, res) => {
-  const db = getDb();
-  const categories = [...new Set(db.data.recipes.map(r => r.category))];
-  res.json(categories);
+router.get('/detail/:id', async (req, res) => {
+  const { id } = req.params;
+  
+  try {
+    const { data: recipe, error } = await supabase
+      .from('recipes')
+      .select(`
+        *,
+        recipe_ingredients(
+          amount, unit,
+          ingredients(name, category, calories, protein, fat, carbs)
+        )
+      `)
+      .eq('id', id)
+      .single();
+    
+    if (error || !recipe) {
+      return res.status(404).json({ error: '食谱不存在' });
+    }
+    
+    const result = {
+      ...recipe,
+      ingredients: recipe.recipe_ingredients?.map(ri => ({
+        name: ri.ingredients?.name,
+        category: ri.ingredients?.category,
+        calories: ri.ingredients?.calories,
+        protein: ri.ingredients?.protein,
+        fat: ri.ingredients?.fat,
+        carbs: ri.ingredients?.carbs,
+        amount: ri.amount,
+        unit: ri.unit
+      })),
+      recipe_ingredients: undefined,
+      estimated_cost: '15.00'
+    };
+    
+    res.json(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: '获取食谱详情失败' });
+  }
+});
+
+router.post('/daily-menu', async (req, res) => {
+  const { calories_target } = req.body;
+  
+  try {
+    const { data: breakfastRecipes } = await supabase
+      .from('recipes')
+      .select('*')
+      .eq('meal_type', 'breakfast');
+    
+    const { data: lunchRecipes } = await supabase
+      .from('recipes')
+      .select('*')
+      .eq('meal_type', 'lunch');
+    
+    const { data: dinnerRecipes } = await supabase
+      .from('recipes')
+      .select('*')
+      .eq('meal_type', 'dinner');
+    
+    const randomPick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+    
+    const breakfast = randomPick(breakfastRecipes || []);
+    const lunch = randomPick(lunchRecipes || []);
+    const dinner = randomPick(dinnerRecipes || []);
+    
+    res.json({
+      breakfast,
+      lunch,
+      dinner,
+      total_calories: (breakfast?.calories || 0) + (lunch?.calories || 0) + (dinner?.calories || 0)
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: '生成食谱失败' });
+  }
+});
+
+router.post('/random', async (req, res) => {
+  const { type = 'single', category } = req.query;
+  
+  try {
+    if (type === 'single') {
+      let query = supabase.from('recipes').select('*');
+      if (category) {
+        query = query.eq('category', category);
+      }
+      
+      const { data } = await query;
+      const recipe = data[Math.floor(Math.random() * data.length)];
+      res.json({ recipe });
+    } else {
+      const { data: breakfastRecipes } = await supabase.from('recipes').select('*').eq('meal_type', 'breakfast');
+      const { data: lunchRecipes } = await supabase.from('recipes').select('*').eq('meal_type', 'lunch');
+      const { data: dinnerRecipes } = await supabase.from('recipes').select('*').eq('meal_type', 'dinner');
+      
+      const randomPick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+      
+      res.json({
+        breakfast: randomPick(breakfastRecipes || []),
+        lunch: randomPick(lunchRecipes || []),
+        dinner: randomPick(dinnerRecipes || [])
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: '获取随机食谱失败' });
+  }
+});
+
+router.get('/categories', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('recipes')
+      .select('category');
+    
+    if (error) throw error;
+    
+    const categories = [...new Set(data.map(r => r.category))];
+    res.json(categories);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: '获取分类失败' });
+  }
 });
 
 module.exports = router;

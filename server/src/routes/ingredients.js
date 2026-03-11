@@ -1,64 +1,91 @@
 const express = require('express');
 const router = express.Router();
-const { getDb } = require('../database/db');
+const { supabase } = require('../database/supabase');
 const dayjs = require('dayjs');
 
-router.get('/list', (req, res) => {
+router.get('/list', async (req, res) => {
   const { category, region = '北京' } = req.query;
   
-  const db = getDb();
-  const today = dayjs().format('YYYY-MM-DD');
-  
-  let ingredients = db.data.ingredients;
-  if (category) {
-    ingredients = ingredients.filter(i => i.category === category);
+  try {
+    const today = dayjs().format('YYYY-MM-DD');
+    
+    let query = supabase
+      .from('ingredients')
+      .select(`
+        *,
+        ingredient_prices!inner(price, source, date, region)
+      `)
+      .eq('ingredient_prices.date', today)
+      .eq('ingredient_prices.region', region);
+    
+    if (category) {
+      query = query.eq('category', category);
+    }
+    
+    const { data, error } = await query;
+    
+    if (error) throw error;
+    
+    const result = data.map(item => ({
+      ...item,
+      current_price: item.ingredient_prices[0]?.price,
+      source: item.ingredient_prices[0]?.source,
+      ingredient_prices: undefined
+    }));
+    
+    res.json(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: '获取食材列表失败' });
   }
-  
-  const result = ingredients.map(i => {
-    const currentPrice = db.data.ingredientPrices.find(
-      p => p.ingredient_id === i.id && p.date === today && p.region === region
-    );
+});
+
+router.get('/categories', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('ingredients')
+      .select('category');
     
-    return {
-      ...i,
-      current_price: currentPrice?.price || null,
-      source: currentPrice?.source || null
-    };
-  });
-  
-  res.json(result);
+    if (error) throw error;
+    
+    const categories = [...new Set(data.map(i => i.category))];
+    res.json(categories);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: '获取分类失败' });
+  }
 });
 
-router.get('/categories', (req, res) => {
-  const db = getDb();
-  const categories = [...new Set(db.data.ingredients.map(i => i.category))];
-  res.json(categories);
-});
-
-router.get('/top-changes', (req, res) => {
+router.get('/top-changes', async (req, res) => {
   const { limit = 10, region = '北京' } = req.query;
-  const db = getDb();
   
-  const today = dayjs().format('YYYY-MM-DD');
-  
-  const result = db.data.ingredients.slice(0, parseInt(limit)).map(i => {
-    const currentPrice = db.data.ingredientPrices.find(
-      p => p.ingredient_id === i.id && p.date === today && p.region === region
-    );
+  try {
+    const { data, error } = await supabase
+      .from('ingredients')
+      .select(`
+        id, name, category,
+        ingredient_prices(price, source)
+      `)
+      .limit(parseInt(limit));
     
-    return {
+    if (error) throw error;
+    
+    const result = data.map(i => ({
       id: i.id,
       name: i.name,
       category: i.category,
-      current_price: currentPrice?.price || null,
+      current_price: i.ingredient_prices[0]?.price,
       change_percent: (Math.random() * 10 - 5).toFixed(2)
-    };
-  });
-  
-  const rising = result.filter(i => i.change_percent > 0);
-  const falling = result.filter(i => i.change_percent <= 0);
-  
-  res.json({ rising, falling });
+    }));
+    
+    const rising = result.filter(i => i.change_percent > 0);
+    const falling = result.filter(i => i.change_percent <= 0);
+    
+    res.json({ rising, falling });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: '获取价格变化榜失败' });
+  }
 });
 
 module.exports = router;

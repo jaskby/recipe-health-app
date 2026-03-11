@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getDb } = require('../database/db');
+const { supabase } = require('../database/supabase');
 const dayjs = require('dayjs');
 const jwt = require('jsonwebtoken');
 
@@ -17,7 +17,7 @@ const authMiddleware = (req, res, next) => {
   }
 };
 
-router.post('/create', authMiddleware, (req, res) => {
+router.post('/create', authMiddleware, async (req, res) => {
   const { start_weight, target_weight, start_date } = req.body;
   
   if (!start_weight || !target_weight) {
@@ -28,49 +28,101 @@ router.post('/create', authMiddleware, (req, res) => {
     return res.status(400).json({ error: '目标体重应小于当前体重' });
   }
   
-  const db = getDb();
-  const weightToLose = start_weight - target_weight;
-  const totalDays = Math.ceil(weightToLose / 0.5) * 7;
-  const startDate = dayjs(start_date || new Date());
-  
-  const planId = db.data.dietPlans.length > 0 
-    ? Math.max(...db.data.dietPlans.map(p => p.id)) + 1 : 1;
-  
-  const newPlan = {
-    id: planId,
-    user_id: req.userId,
-    start_weight,
-    target_weight,
-    start_date: startDate.format('YYYY-MM-DD'),
-    end_date: startDate.add(totalDays, 'day').format('YYYY-MM-DD'),
-    total_days: totalDays,
-    total_cost: Number((totalDays * 25).toFixed(2)),
-    status: 'active',
-    created_at: new Date().toISOString()
-  };
-  
-  db.data.dietPlans.push(newPlan);
-  db.write();
-  
-  res.json({ message: '减肥计划创建成功', plan: newPlan });
+  try {
+    const weightToLose = start_weight - target_weight;
+    const totalDays = Math.ceil(weightToLose / 0.5) * 7;
+    const startDate = dayjs(start_date || new Date());
+    const endDate = startDate.add(totalDays, 'day');
+    
+    const { data: plan, error } = await supabase
+      .from('diet_plans')
+      .insert({
+        user_id: req.userId,
+        start_weight,
+        target_weight,
+        start_date: startDate.format('YYYY-MM-DD'),
+        end_date: endDate.format('YYYY-MM-DD'),
+        total_days: totalDays,
+        total_cost: Number((totalDays * 25).toFixed(2)),
+        status: 'active'
+      })
+      .select()
+      .single();
+    
+    if (error) throw error;
+    
+    res.json({ message: '减肥计划创建成功', plan });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: '创建减肥计划失败' });
+  }
 });
 
-router.get('/my-plans', authMiddleware, (req, res) => {
-  const db = getDb();
-  const plans = db.data.dietPlans
-    .filter(p => p.user_id === req.userId)
-    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-  res.json(plans);
+router.get('/my-plans', authMiddleware, async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('diet_plans')
+      .select('*')
+      .eq('user_id', req.userId)
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    res.json(data);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: '获取减肥计划失败' });
+  }
 });
 
-router.get('/detail/:id', (req, res) => {
+router.get('/detail/:id', async (req, res) => {
   const { id } = req.params;
-  const db = getDb();
   
-  const plan = db.data.dietPlans.find(p => p.id === parseInt(id));
-  if (!plan) return res.status(404).json({ error: '计划不存在' });
-  
-  res.json({ ...plan, daily_meals: [] });
+  try {
+    const { data: plan, error } = await supabase
+      .from('diet_plans')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error || !plan) {
+      return res.status(404).json({ error: '计划不存在' });
+    }
+    
+    res.json({ ...plan, daily_meals: [] });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: '获取计划详情失败' });
+  }
+});
+
+router.put('/cancel/:id', authMiddleware, async (req, res) => {
+  try {
+    await supabase
+      .from('diet_plans')
+      .update({ status: 'cancelled' })
+      .eq('id', req.params.id)
+      .eq('user_id', req.userId);
+    
+    res.json({ message: '计划已取消' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: '取消计划失败' });
+  }
+});
+
+router.put('/complete/:id', authMiddleware, async (req, res) => {
+  try {
+    await supabase
+      .from('diet_plans')
+      .update({ status: 'completed' })
+      .eq('id', req.params.id)
+      .eq('user_id', req.userId);
+    
+    res.json({ message: '恭喜完成减肥计划！' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: '操作失败' });
+  }
 });
 
 module.exports = router;
