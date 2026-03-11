@@ -1,0 +1,421 @@
+const { LowSync } = require('lowdb');
+const { JSONFileSync } = require('lowdb/node');
+const path = require('path');
+const fs = require('fs');
+
+const dbDir = path.join(__dirname, '../database');
+if (!fs.existsSync(dbDir)) {
+  fs.mkdirSync(dbDir, { recursive: true });
+}
+
+const dbPath = path.join(dbDir, 'recipe_health.json');
+const adapter = new JSONFileSync(dbPath);
+const db = new LowSync(adapter, {
+  users: [],
+  userPreferences: [],
+  ingredients: [],
+  ingredientPrices: [],
+  recipes: [],
+  recipeIngredients: [],
+  dietPlans: [],
+  dietPlanMeals: [],
+  weightRecords: [],
+  userFavorites: []
+});
+
+db.read();
+
+function initSampleData() {
+  if (db.data.ingredients.length === 0) {
+    const ingredients = [
+      { id: 1, name: '西红柿', category: '蔬菜', unit: '斤', calories: 15, protein: 0.9, fat: 0.2, carbs: 3.3, fiber: 1.2 },
+      { id: 2, name: '鸡蛋', category: '蛋奶', unit: '斤', calories: 144, protein: 13.3, fat: 8.8, carbs: 2.8, fiber: 0 },
+      { id: 3, name: '鸡胸肉', category: '肉类', unit: '斤', calories: 133, protein: 19.4, fat: 5.0, carbs: 2.5, fiber: 0 },
+      { id: 4, name: '牛肉', category: '肉类', unit: '斤', calories: 125, protein: 20.0, fat: 4.2, carbs: 0, fiber: 0 },
+      { id: 5, name: '三文鱼', category: '海鲜', unit: '斤', calories: 139, protein: 20.0, fat: 6.3, carbs: 0, fiber: 0 },
+      { id: 6, name: '大虾', category: '海鲜', unit: '斤', calories: 87, protein: 18.6, fat: 0.8, carbs: 2.8, fiber: 0 },
+      { id: 7, name: '西兰花', category: '蔬菜', unit: '斤', calories: 36, protein: 4.1, fat: 0.6, carbs: 4.3, fiber: 2.6 },
+      { id: 8, name: '菠菜', category: '蔬菜', unit: '斤', calories: 23, protein: 2.6, fat: 0.3, carbs: 3.6, fiber: 1.7 },
+      { id: 9, name: '土豆', category: '蔬菜', unit: '斤', calories: 81, protein: 2.0, fat: 0.2, carbs: 17.8, fiber: 1.2 },
+      { id: 10, name: '胡萝卜', category: '蔬菜', unit: '斤', calories: 37, protein: 1.0, fat: 0.2, carbs: 8.1, fiber: 1.3 },
+      { id: 11, name: '豆腐', category: '豆制品', unit: '斤', calories: 81, protein: 8.1, fat: 3.7, carbs: 3.8, fiber: 0.4 },
+      { id: 12, name: '米饭', category: '主食', unit: '斤', calories: 116, protein: 2.6, fat: 0.3, carbs: 25.6, fiber: 0.3 },
+      { id: 13, name: '面条', category: '主食', unit: '斤', calories: 137, protein: 4.5, fat: 0.5, carbs: 28.0, fiber: 0.8 },
+      { id: 14, name: '黄瓜', category: '蔬菜', unit: '斤', calories: 15, protein: 0.8, fat: 0.2, carbs: 2.4, fiber: 0.5 },
+      { id: 15, name: '茄子', category: '蔬菜', unit: '斤', calories: 21, protein: 1.1, fat: 0.2, carbs: 4.0, fiber: 1.3 },
+      { id: 16, name: '青椒', category: '蔬菜', unit: '斤', calories: 22, protein: 1.0, fat: 0.2, carbs: 4.2, fiber: 1.4 },
+      { id: 17, name: '排骨', category: '肉类', unit: '斤', calories: 278, protein: 18.0, fat: 23.1, carbs: 0, fiber: 0 },
+      { id: 18, name: '五花肉', category: '肉类', unit: '斤', calories: 349, protein: 9.3, fat: 35.3, carbs: 0, fiber: 0 },
+      { id: 19, name: '鲈鱼', category: '海鲜', unit: '斤', calories: 105, protein: 18.6, fat: 3.1, carbs: 0, fiber: 0 },
+      { id: 20, name: '白菜', category: '蔬菜', unit: '斤', calories: 13, protein: 1.0, fat: 0.1, carbs: 2.1, fiber: 0.6 }
+    ];
+
+    db.data.ingredients = ingredients;
+
+    const today = new Date().toISOString().split('T')[0];
+    const prices = [
+      { id: 1, ingredient_id: 1, price: 4.5, source: '永辉超市', region: '北京', date: today },
+      { id: 2, ingredient_id: 2, price: 6.8, source: '永辉超市', region: '北京', date: today },
+      { id: 3, ingredient_id: 3, price: 15.8, source: '永辉超市', region: '北京', date: today },
+      { id: 4, ingredient_id: 4, price: 38.0, source: '永辉超市', region: '北京', date: today },
+      { id: 5, ingredient_id: 5, price: 68.0, source: '永辉超市', region: '北京', date: today },
+      { id: 6, ingredient_id: 6, price: 35.0, source: '永辉超市', region: '北京', date: today },
+      { id: 7, ingredient_id: 7, price: 5.8, source: '永辉超市', region: '北京', date: today },
+      { id: 8, ingredient_id: 8, price: 3.5, source: '永辉超市', region: '北京', date: today },
+      { id: 9, ingredient_id: 9, price: 2.8, source: '永辉超市', region: '北京', date: today },
+      { id: 10, ingredient_id: 10, price: 2.5, source: '永辉超市', region: '北京', date: today },
+      { id: 11, ingredient_id: 11, price: 3.0, source: '永辉超市', region: '北京', date: today },
+      { id: 12, ingredient_id: 12, price: 2.5, source: '永辉超市', region: '北京', date: today },
+      { id: 13, ingredient_id: 13, price: 4.0, source: '永辉超市', region: '北京', date: today },
+      { id: 14, ingredient_id: 14, price: 3.0, source: '永辉超市', region: '北京', date: today },
+      { id: 15, ingredient_id: 15, price: 2.8, source: '永辉超市', region: '北京', date: today },
+      { id: 16, ingredient_id: 16, price: 3.5, source: '永辉超市', region: '北京', date: today },
+      { id: 17, ingredient_id: 17, price: 28.0, source: '永辉超市', region: '北京', date: today },
+      { id: 18, ingredient_id: 18, price: 22.0, source: '永辉超市', region: '北京', date: today },
+      { id: 19, ingredient_id: 19, price: 25.0, source: '永辉超市', region: '北京', date: today },
+      { id: 20, ingredient_id: 20, price: 1.5, source: '永辉超市', region: '北京', date: today }
+    ];
+
+    db.data.ingredientPrices = prices;
+  }
+
+  if (db.data.recipes.length === 0) {
+    const recipes = [
+      {
+        id: 1,
+        name: '番茄炒蛋',
+        category: '家常菜',
+        meal_type: 'lunch',
+        calories: 180,
+        protein: 12,
+        fat: 10,
+        carbs: 8,
+        cooking_time: 15,
+        difficulty: '简单',
+        steps: [
+          '西红柿洗净切块，鸡蛋打散加少许盐',
+          '锅中放油，油热后倒入蛋液，炒至凝固盛出',
+          '锅中再加少许油，放入西红柿翻炒出汁',
+          '加入炒好的鸡蛋，翻炒均匀，加盐调味即可'
+        ],
+        tips: '西红柿要选熟透的，炒出来汁水更多'
+      },
+      {
+        id: 2,
+        name: '清蒸鲈鱼',
+        category: '海鲜',
+        meal_type: 'dinner',
+        calories: 150,
+        protein: 25,
+        fat: 4,
+        carbs: 2,
+        cooking_time: 25,
+        difficulty: '中等',
+        steps: [
+          '鲈鱼处理干净，在鱼身两侧划几刀',
+          '鱼身抹少许盐和料酒，腌制10分钟',
+          '葱切丝，姜切片铺在鱼身上',
+          '水开后放入鱼，大火蒸8-10分钟',
+          '出锅后淋上蒸鱼豉油，浇上热油即可'
+        ],
+        tips: '蒸鱼时间不宜过长，肉质会更嫩'
+      },
+      {
+        id: 3,
+        name: '西兰花炒鸡胸肉',
+        category: '健康餐',
+        meal_type: 'lunch',
+        calories: 200,
+        protein: 28,
+        fat: 6,
+        carbs: 10,
+        cooking_time: 20,
+        difficulty: '简单',
+        steps: [
+          '鸡胸肉切丁，加料酒、生抽、淀粉腌制15分钟',
+          '西兰花切小朵，焯水后捞出',
+          '锅中放油，放入鸡胸肉翻炒至变色',
+          '加入西兰花翻炒，加盐、生抽调味即可'
+        ],
+        tips: '鸡胸肉腌制时加淀粉会更嫩滑'
+      },
+      {
+        id: 4,
+        name: '红烧排骨',
+        category: '家常菜',
+        meal_type: 'lunch',
+        calories: 380,
+        protein: 22,
+        fat: 28,
+        carbs: 8,
+        cooking_time: 60,
+        difficulty: '中等',
+        steps: [
+          '排骨冷水下锅焯水，撇去浮沫捞出',
+          '锅中放油，加入冰糖炒出糖色',
+          '放入排骨翻炒上色',
+          '加入葱姜蒜、八角、桂皮、生抽、老抽',
+          '加入没过排骨的水，大火烧开后转小火炖40分钟',
+          '大火收汁即可'
+        ],
+        tips: '炒糖色时火候要小，避免炒糊'
+      },
+      {
+        id: 5,
+        name: '凉拌黄瓜',
+        category: '凉菜',
+        meal_type: 'dinner',
+        calories: 45,
+        protein: 1,
+        fat: 3,
+        carbs: 4,
+        cooking_time: 10,
+        difficulty: '简单',
+        steps: [
+          '黄瓜洗净拍碎，切成小段',
+          '蒜切末，干辣椒切段',
+          '黄瓜放入碗中，加入蒜末、盐、糖、醋、生抽',
+          '锅中烧热油，放入干辣椒炸香',
+          '将热油浇在黄瓜上拌匀即可'
+        ],
+        tips: '黄瓜拍碎比切更容易入味'
+      },
+      {
+        id: 6,
+        name: '番茄鸡蛋面',
+        category: '面食',
+        meal_type: 'breakfast',
+        calories: 320,
+        protein: 14,
+        fat: 8,
+        carbs: 48,
+        cooking_time: 15,
+        difficulty: '简单',
+        steps: [
+          '西红柿切块，鸡蛋打散',
+          '锅中放油，炒熟鸡蛋盛出',
+          '锅中再放油，放入西红柿炒出汁',
+          '加入适量水煮开，放入面条',
+          '面条煮熟后加入炒蛋，加盐调味即可'
+        ],
+        tips: '面条不要煮太久，保持筋道'
+      },
+      {
+        id: 7,
+        name: '香煎三文鱼',
+        category: '海鲜',
+        meal_type: 'dinner',
+        calories: 280,
+        protein: 32,
+        fat: 16,
+        carbs: 2,
+        cooking_time: 15,
+        difficulty: '简单',
+        steps: [
+          '三文鱼用厨房纸吸干水分',
+          '两面撒上盐和黑胡椒腌制10分钟',
+          '平底锅放少许油，中火加热',
+          '三文鱼皮朝下放入锅中，煎3-4分钟',
+          '翻面再煎2-3分钟即可'
+        ],
+        tips: '三文鱼不要煎太久，保持内部嫩滑'
+      },
+      {
+        id: 8,
+        name: '麻婆豆腐',
+        category: '川菜',
+        meal_type: 'lunch',
+        calories: 180,
+        protein: 15,
+        fat: 12,
+        carbs: 6,
+        cooking_time: 20,
+        difficulty: '中等',
+        steps: [
+          '豆腐切块，用盐水浸泡10分钟',
+          '锅中放油，放入肉末炒散',
+          '加入豆瓣酱炒出红油',
+          '加入适量水，放入豆腐煮5分钟',
+          '用水淀粉勾芡，撒上花椒粉和葱花即可'
+        ],
+        tips: '豆腐提前用盐水泡可以去除豆腥味'
+      },
+      {
+        id: 9,
+        name: '蔬菜沙拉',
+        category: '健康餐',
+        meal_type: 'dinner',
+        calories: 80,
+        protein: 3,
+        fat: 4,
+        carbs: 8,
+        cooking_time: 10,
+        difficulty: '简单',
+        steps: [
+          '西兰花焯水后捞出',
+          '黄瓜切片，胡萝卜切丝',
+          '所有蔬菜放入碗中',
+          '加入橄榄油、柠檬汁、盐、黑胡椒拌匀即可'
+        ],
+        tips: '沙拉酱可以用酸奶代替更健康'
+      },
+      {
+        id: 10,
+        name: '白灼大虾',
+        category: '海鲜',
+        meal_type: 'dinner',
+        calories: 120,
+        protein: 22,
+        fat: 2,
+        carbs: 3,
+        cooking_time: 10,
+        difficulty: '简单',
+        steps: [
+          '大虾剪去须脚，挑去虾线',
+          '锅中放水，加入姜片、葱段、料酒',
+          '水开后放入大虾',
+          '煮至虾变红弯曲，捞出即可',
+          '蘸料：生抽+醋+姜末'
+        ],
+        tips: '虾不要煮太久，肉质会变老'
+      },
+      {
+        id: 11,
+        name: '青椒肉丝',
+        category: '家常菜',
+        meal_type: 'lunch',
+        calories: 220,
+        protein: 18,
+        fat: 14,
+        carbs: 6,
+        cooking_time: 20,
+        difficulty: '简单',
+        steps: [
+          '猪肉切丝，加料酒、生抽、淀粉腌制',
+          '青椒切丝',
+          '锅中放油，放入肉丝滑散盛出',
+          '锅中留油，放入青椒翻炒',
+          '加入肉丝，加盐、生抽调味即可'
+        ],
+        tips: '肉丝腌制时加少许油可以防止粘连'
+      },
+      {
+        id: 12,
+        name: '菠菜蛋花汤',
+        category: '汤类',
+        meal_type: 'dinner',
+        calories: 60,
+        protein: 6,
+        fat: 3,
+        carbs: 4,
+        cooking_time: 10,
+        difficulty: '简单',
+        steps: [
+          '菠菜洗净切段，鸡蛋打散',
+          '锅中放水煮开，放入菠菜',
+          '菠菜煮软后，慢慢倒入蛋液',
+          '加盐、香油调味即可'
+        ],
+        tips: '菠菜提前焯水可以去除草酸'
+      },
+      {
+        id: 13,
+        name: '土豆炖牛肉',
+        category: '家常菜',
+        meal_type: 'lunch',
+        calories: 320,
+        protein: 25,
+        fat: 15,
+        carbs: 22,
+        cooking_time: 90,
+        difficulty: '中等',
+        steps: [
+          '牛肉切块，冷水下锅焯水',
+          '土豆去皮切块',
+          '锅中放油，放入牛肉翻炒',
+          '加入葱姜、八角、桂皮、生抽、老抽',
+          '加入适量水，大火烧开转小火炖60分钟',
+          '加入土豆继续炖20分钟即可'
+        ],
+        tips: '牛肉炖煮时间要足够，才会软烂'
+      },
+      {
+        id: 14,
+        name: '蒸蛋羹',
+        category: '家常菜',
+        meal_type: 'breakfast',
+        calories: 100,
+        protein: 10,
+        fat: 6,
+        carbs: 2,
+        cooking_time: 15,
+        difficulty: '简单',
+        steps: [
+          '鸡蛋打散，加入1.5倍温水',
+          '加盐搅拌均匀，过滤掉泡沫',
+          '盖上保鲜膜，扎几个小孔',
+          '水开后放入，中火蒸10分钟',
+          '淋上生抽、香油，撒葱花即可'
+        ],
+        tips: '蛋液要过滤，蒸出来的蛋羹更嫩滑'
+      },
+      {
+        id: 15,
+        name: '红烧茄子',
+        category: '家常菜',
+        meal_type: 'lunch',
+        calories: 150,
+        protein: 3,
+        fat: 10,
+        carbs: 14,
+        cooking_time: 25,
+        difficulty: '中等',
+        steps: [
+          '茄子切条，撒盐腌制10分钟挤出水分',
+          '调酱汁：生抽、老抽、糖、醋、淀粉、水',
+          '锅中放油，放入茄子煎至软糯盛出',
+          '锅中留油，放入蒜末爆香',
+          '倒入茄子，加入酱汁翻炒均匀即可'
+        ],
+        tips: '茄子提前腌制可以减少吸油'
+      }
+    ];
+
+    db.data.recipes = recipes;
+
+    const recipeIngredients = [
+      { id: 1, recipe_id: 1, ingredient_id: 1, amount: 2, unit: '个' },
+      { id: 2, recipe_id: 1, ingredient_id: 2, amount: 3, unit: '个' },
+      { id: 3, recipe_id: 2, ingredient_id: 19, amount: 1, unit: '条' },
+      { id: 4, recipe_id: 3, ingredient_id: 3, amount: 200, unit: '克' },
+      { id: 5, recipe_id: 3, ingredient_id: 7, amount: 150, unit: '克' },
+      { id: 6, recipe_id: 4, ingredient_id: 17, amount: 500, unit: '克' },
+      { id: 7, recipe_id: 5, ingredient_id: 14, amount: 2, unit: '根' },
+      { id: 8, recipe_id: 6, ingredient_id: 1, amount: 2, unit: '个' },
+      { id: 9, recipe_id: 6, ingredient_id: 2, amount: 2, unit: '个' },
+      { id: 10, recipe_id: 6, ingredient_id: 13, amount: 100, unit: '克' },
+      { id: 11, recipe_id: 7, ingredient_id: 5, amount: 200, unit: '克' },
+      { id: 12, recipe_id: 8, ingredient_id: 11, amount: 300, unit: '克' },
+      { id: 13, recipe_id: 9, ingredient_id: 7, amount: 100, unit: '克' },
+      { id: 14, recipe_id: 9, ingredient_id: 14, amount: 1, unit: '根' },
+      { id: 15, recipe_id: 9, ingredient_id: 10, amount: 50, unit: '克' },
+      { id: 16, recipe_id: 10, ingredient_id: 6, amount: 300, unit: '克' },
+      { id: 17, recipe_id: 11, ingredient_id: 16, amount: 2, unit: '个' },
+      { id: 18, recipe_id: 12, ingredient_id: 8, amount: 200, unit: '克' },
+      { id: 19, recipe_id: 12, ingredient_id: 2, amount: 2, unit: '个' },
+      { id: 20, recipe_id: 13, ingredient_id: 4, amount: 300, unit: '克' },
+      { id: 21, recipe_id: 13, ingredient_id: 9, amount: 2, unit: '个' },
+      { id: 22, recipe_id: 14, ingredient_id: 2, amount: 2, unit: '个' },
+      { id: 23, recipe_id: 15, ingredient_id: 15, amount: 2, unit: '个' }
+    ];
+
+    db.data.recipeIngredients = recipeIngredients;
+  }
+
+  db.write();
+  console.log('数据库初始化完成');
+}
+
+initSampleData();
+
+module.exports = db;

@@ -1,0 +1,11 @@
+node_modules/
+.vercel/
+*.log
+.env
+.env.local
+server/database/*.json
+client/dist/
+client/node_modules/
+server/node_modules/
+.DS_Store
+Thumbs.db

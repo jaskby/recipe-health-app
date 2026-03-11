@@ -1,0 +1,129 @@
+{
+  "pages": [
+    {
+      "path": "pages/index/index",
+      "style": {
+        "navigationBarTitleText": "首页",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/ingredients/ingredients",
+      "style": {
+        "navigationBarTitleText": "食材价格",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/recipe/recommend",
+      "style": {
+        "navigationBarTitleText": "每日食谱",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/recipe/random",
+      "style": {
+        "navigationBarTitleText": "随机推荐"
+      }
+    },
+    {
+      "path": "pages/recipe/detail",
+      "style": {
+        "navigationBarTitleText": "食谱详情"
+      }
+    },
+    {
+      "path": "pages/diet-plan/create",
+      "style": {
+        "navigationBarTitleText": "创建减肥计划"
+      }
+    },
+    {
+      "path": "pages/diet-plan/detail",
+      "style": {
+        "navigationBarTitleText": "计划详情"
+      }
+    },
+    {
+      "path": "pages/diet-plan/list",
+      "style": {
+        "navigationBarTitleText": "我的减肥计划"
+      }
+    },
+    {
+      "path": "pages/weight/record",
+      "style": {
+        "navigationBarTitleText": "体重记录"
+      }
+    },
+    {
+      "path": "pages/weight/history",
+      "style": {
+        "navigationBarTitleText": "体重历史"
+      }
+    },
+    {
+      "path": "pages/user/profile",
+      "style": {
+        "navigationBarTitleText": "个人资料"
+      }
+    },
+    {
+      "path": "pages/user/preferences",
+      "style": {
+        "navigationBarTitleText": "饮食偏好"
+      }
+    },
+    {
+      "path": "pages/user/favorites",
+      "style": {
+        "navigationBarTitleText": "我的收藏"
+      }
+    },
+    {
+      "path": "pages/login/login",
+      "style": {
+        "navigationBarTitleText": "登录"
+      }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "食谱健康",
+    "navigationBarBackgroundColor": "#ffffff",
+    "backgroundColor": "#f5f5f5"
+  },
+  "tabBar": {
+    "color": "#999999",
+    "selectedColor": "#4CAF50",
+    "borderStyle": "black",
+    "backgroundColor": "#ffffff",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页",
+        "iconPath": "static/tabbar/home.png",
+        "selectedIconPath": "static/tabbar/home-active.png"
+      },
+      {
+        "pagePath": "pages/recipe/recommend",
+        "text": "食谱",
+        "iconPath": "static/tabbar/recipe.png",
+        "selectedIconPath": "static/tabbar/recipe-active.png"
+      },
+      {
+        "pagePath": "pages/weight/record",
+        "text": "体重",
+        "iconPath": "static/tabbar/weight.png",
+        "selectedIconPath": "static/tabbar/weight-active.png"
+      },
+      {
+        "pagePath": "pages/user/profile",
+        "text": "我的",
+        "iconPath": "static/tabbar/user.png",
+        "selectedIconPath": "static/tabbar/user-active.png"
+      }
+    ]
+  }
+}
