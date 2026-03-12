@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>食谱健康APP测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        h2 {
+            color: #555;
+            margin-top: 0;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .response {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .test-account {
+            background-color: #e3f2fd;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>食谱健康APP测试</h1>
+        
+        <div class="test-account">
+            <h3>测试账号</h3>
+            <p>手机号: 13800138000</p>
+            <p>密码: 123456</p>
+        </div>
+
+        <!-- 健康检查 -->
+        <div class="section">
+            <h2>健康检查</h2>
+            <button onclick="testHealth()">测试健康检查</button>
+            <div class="response" id="healthResponse"></div>
+        </div>
+
+        <!-- 食材测试 -->
+        <div class="section">
+            <h2>食材测试</h2>
+            <button onclick="testIngredientsList()">获取食材列表</button>
+            <button onclick="testIngredientsCategories()">获取食材分类</button>
+            <button onclick="testIngredientsTopChanges()">获取价格变化榜</button>
+            <div class="response" id="ingredientsResponse"></div>
+        </div>
+
+        <!-- 食谱测试 -->
+        <div class="section">
+            <h2>食谱测试</h2>
+            <button onclick="testRecipesList()">获取食谱列表</button>
+            <button onclick="testDailyMenu()">生成每日菜单</button>
+            <button onclick="testRandomRecipe()">获取随机食谱</button>
+            <div class="response" id="recipesResponse"></div>
+        </div>
+
+        <!-- 认证测试 -->
+        <div class="section">
+            <h2>认证测试</h2>
+            <button onclick="testLogin()">用户登录</button>
+            <div class="response" id="authResponse"></div>
+        </div>
+
+        <!-- 减肥计划测试 -->
+        <div class="section">
+            <h2>减肥计划测试</h2>
+            <button onclick="testCreateDietPlan()">创建减肥计划</button>
+            <div class="response" id="dietPlanResponse"></div>
+        </div>
+
+        <!-- 体重记录测试 -->
+        <div class="section">
+            <h2>体重记录测试</h2>
+            <button onclick="testRecordWeight()">记录体重</button>
+            <div class="response" id="weightResponse"></div>
+        </div>
+    </div>
+
+    <script>
+        let token = '';
+
+        // 通用请求函数
+        async function fetchAPI(url, options = {}) {
+            try {
+                const response = await fetch(url, {
+                    ...options,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(token && { 'Authorization': `Bearer ${token}` }),
+                        ...options.headers
+                    }
+                });
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                return { error: error.message };
+            }
+        }
+
+        // 显示响应
+        function showResponse(elementId, data) {
+            document.getElementById(elementId).textContent = JSON.stringify(data, null, 2);
+        }
+
+        // 健康检查
+        async function testHealth() {
+            const data = await fetchAPI('http://localhost:3001/api/health');
+            showResponse('healthResponse', data);
+        }
+
+        // 食材测试
+        async function testIngredientsList() {
+            const data = await fetchAPI('http://localhost:3001/api/ingredients/list');
+            showResponse('ingredientsResponse', data);
+        }
+
+        async function testIngredientsCategories() {
+            const data = await fetchAPI('http://localhost:3001/api/ingredients/categories');
+            showResponse('ingredientsResponse', data);
+        }
+
+        async function testIngredientsTopChanges() {
+            const data = await fetchAPI('http://localhost:3001/api/ingredients/top-changes');
+            showResponse('ingredientsResponse', data);
+        }
+
+        // 食谱测试
+        async function testRecipesList() {
+            const data = await fetchAPI('http://localhost:3001/api/recipes/list');
+            showResponse('recipesResponse', data);
+        }
+
+        async function testDailyMenu() {
+            const data = await fetchAPI('http://localhost:3001/api/recipes/daily-menu', {
+                method: 'POST'
+            });
+            showResponse('recipesResponse', data);
+        }
+
+        async function testRandomRecipe() {
+            const data = await fetchAPI('http://localhost:3001/api/recipes/random', {
+                method: 'POST'
+            });
+            showResponse('recipesResponse', data);
+        }
+
+        // 认证测试
+        async function testLogin() {
+            const data = await fetchAPI('http://localhost:3001/api/auth/login', {
+                method: 'POST',
+                body: JSON.stringify({
+                    phone: '13800138000',
+                    password: '123456'
+                })
+            });
+            showResponse('authResponse', data);
+            if (data.token) {
+                token = data.token;
+                alert('登录成功，已获取token');
+            }
+        }
+
+        // 减肥计划测试
+        async function testCreateDietPlan() {
+            if (!token) {
+                alert('请先登录');
+                return;
+            }
+            const data = await fetchAPI('http://localhost:3001/api/diet-plans/create', {
+                method: 'POST',
+                body: JSON.stringify({
+                    start_weight: 70,
+                    target_weight: 60,
+                    start_date: new Date().toISOString().split('T')[0]
+                })
+            });
+            showResponse('dietPlanResponse', data);
+        }
+
+        // 体重记录测试
+        async function testRecordWeight() {
+            if (!token) {
+                alert('请先登录');
+                return;
+            }
+            const data = await fetchAPI('http://localhost:3001/api/weight/record', {
+                method: 'POST',
+                body: JSON.stringify({
+                    weight: 68.5,
+                    note: '今天的体重'
+                })
+            });
+            showResponse('weightResponse', data);
+        }
+    </script>
+</body>
+</html>

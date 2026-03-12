@@ -74,6 +74,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { onPullDownRefresh } from '@dcloudio/uni-app'
 import { useRecipeStore } from '../../stores/recipe'
 import { useUserStore } from '../../stores/user'
 
@@ -121,7 +122,7 @@ onMounted(() => {
   generateMenu()
 })
 
-uni.onPullDownRefresh(() => {
+onPullDownRefresh(() => {
   generateMenu().finally(() => {
     uni.stopPullDownRefresh()
   })

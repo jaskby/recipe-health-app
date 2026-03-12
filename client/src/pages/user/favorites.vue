@@ -27,6 +27,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { onPullDownRefresh } from '@dcloudio/uni-app'
 import { useUserStore } from '../../stores/user'
 import api from '../../utils/request'
 import dayjs from 'dayjs'
@@ -74,7 +75,7 @@ onMounted(() => {
   loadFavorites()
 })
 
-uni.onPullDownRefresh(() => {
+onPullDownRefresh(() => {
   loadFavorites().finally(() => {
     uni.stopPullDownRefresh()
   })

@@ -111,6 +111,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { onPullDownRefresh } from '@dcloudio/uni-app'
 import { useIngredientStore } from '../../stores/ingredient'
 
 const ingredientStore = useIngredientStore()
@@ -168,7 +169,7 @@ onMounted(() => {
   loadIngredients()
 })
 
-uni.onPullDownRefresh(() => {
+onPullDownRefresh(() => {
   Promise.all([loadCategories(), loadIngredients()]).finally(() => {
     uni.stopPullDownRefresh()
   })

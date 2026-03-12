@@ -1,4 +1,4 @@
-const BASE_URL = 'http://localhost:3000/api'
+const BASE_URL = 'https://recipe-health-app.vercel.app/api'
 
 const request = (options) => {
   return new Promise((resolve, reject) => {
